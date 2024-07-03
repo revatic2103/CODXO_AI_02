@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoCorrect Tool</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+<style>
+    body {
+        padding: 20px;
+        background: rgb(123, 131, 230);
+        color: black;
+    }
+
+    .container {
+        margin-top: 10px;
+        max-width: 600px;
+        text-align: center;
+        animation: fadeIn 2s;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    textarea {
+        width: 100%;
+        height: 200px;
+        resize: none;
+    }
+
+    .btn-primary {
+        margin-top: 20px;
+        width: 100%;
+    }
+
+    .corrected-text {
+        margin-top: 30px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    #liveCorrection, .form-group, .btn-primary {
+        animation: fadeInUp 1s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+</head>
+<body>
+<h1 class="text-center">AutoCorrect Tool</h1>
+<div class="container">
+    <form id="spellForm" action="/spell" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="text">Type your text here</label>
+            <textarea class="form-control" id="text" name="text" oninput="spellCheck(this.value)"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Correct</button>
+    </form>
+
+    <div id="liveCorrection">
+        <h5>Live Corrected Words:</h5>
+        <p id="liveCorrected"></p>
+    </div>
+
+    {% if corrected_text and corrected_grammar %}
+        <div class="corrected-text">
+            <h5>Corrected Text:</h5>
+            <p>{{ corrected_text }}</p>
+            <h5>Grammar Mistakes:</h5>
+            <ul>
+                {% for mistake in corrected_grammar %}
+                    <li>{{ mistake.message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+
+<div class="container">
+    <form action="/grammar" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">Upload Text File</label>
+            <input type="file" name="file" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Correct</button>
+    </form>
+
+    {% if corrected_file_text and corrected_file_grammar %}
+        <div class="corrected-text">
+            <h5>Corrected Text from File:</h5>
+            <p>{{ corrected_file_text }}</p>
+            <h5>Grammar Mistakes from File:</h5>
+            <ul>
+                {% for mistake in corrected_file_grammar %}
+                    <li>{{ mistake.message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+<script>
+    function spellCheck(text) {
+        fetch('/spell', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                'text': text
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.corrected_text) {
+                document.getElementById('liveCorrected').innerText = data.corrected_text;
+            }
+            if (data.corrected_grammar) {
+                let grammarErrors = data.corrected_grammar.map(mistake => mistake.message).join(', ');
+                console.log(grammarErrors);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+</body>
+</html>
